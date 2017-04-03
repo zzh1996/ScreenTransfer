@@ -1,0 +1,98 @@
+<html>
+  <head>
+  </head>
+  <body>
+    <input type="file" id="f"><br>
+    <canvas id="c" width="512" height="516" style="border:4px solid #FF00FF;">Fail</canvas><br>
+    <div id="info"></div>
+    <script type="text/javascript">
+      "use strict";
+      function hashCode(s){
+        var h=s.split("").reduce(function(a,b){a=((a<<5)-a)+b.charCodeAt(0);return a&a},0);
+        if(h<0)h+=4294967296;
+        return h;
+      };
+
+      function numtobin(n){
+        var result=[];
+        for(var i=0;i<32;i++){
+          result.push((n>>i)&1);
+        }
+        return result;
+      };
+
+      function chartobin(n){
+        var result=[];
+        for(var i=0;i<8;i++){
+          result.push((n>>i)&1);
+        }
+        return result;
+      };
+
+      function show(data,start,len,hashf){
+        if(start+len>data.length)
+          len=data.length-start;
+        var c=document.getElementById("c");
+        var ctx=c.getContext("2d");
+        ctx.clearRect(0,0,c.width,c.height);
+        for(var y=0;y<128;y++){
+          for(var x=0;x<16;x++){
+            if(y*16+x<len){
+              var bits=chartobin(data.charCodeAt(start+y*16+x));
+              for(var i=0;i<8;i++){
+                if(bits[i])
+                  ctx.fillRect((x*8+i)*4,y*4,4,4);
+              }
+            }
+          }
+        }
+        var bits=numtobin(start);
+        for(var i=0;i<32;i++){
+          if(bits[i])
+            ctx.fillRect(i*4,512,4,4);
+        }
+        bits=numtobin(data.length);
+        for(var i=0;i<32;i++){
+          if(bits[i])
+            ctx.fillRect(i*4+32*4,512,4,4);
+        }
+        bits=numtobin(hashf);
+        for(var i=0;i<32;i++){
+          if(bits[i])
+            ctx.fillRect(i*4+64*4,512,4,4);
+        }
+        bits=numtobin(hashCode(data.slice(start,start+len)));
+        for(var i=0;i<32;i++){
+          if(bits[i])
+            ctx.fillRect(i*4+96*4,512,4,4);
+        }
+        var info=document.getElementById("info")
+        info.innerHTML="start="+start+",total="+data.length+",hash="+hashf+"<br>"+100*start/data.length+"%";
+        
+        setTimeout(function(){
+          if(start+len<data.length){
+            show(data,start+len,2048,hashf);
+          }else{
+            show(data,0,2048,hashf);
+          }
+        },100);
+      }
+
+      function processbin(data){
+        var hashf=hashCode(data);
+        setTimeout(function(){show(data,0,2048,hashf);}, 100);
+      };
+
+      var f=document.getElementById("f");
+      f.addEventListener("change",processfile,false);
+      function processfile(){
+        var f=this.files[0];
+        var r=new FileReader();
+        r.onload=function(e){
+          processbin(r.result);
+        };
+        r.readAsBinaryString(f);
+      };
+    </script>
+  </body>
+</html>
